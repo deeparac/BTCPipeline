@@ -1,15 +1,8 @@
 # update apt-get
 apt update
 
-# install wget & curl
-apt install wget
-apt install curl
-
-# install vim
-apt install vim
-
-# install git
-apt install git
+# install wget & curl & vim & git & java
+apt install wget curl vim git openjdk-8-jre
 
 # download kafka 2.11-1.0.1
 curl -O http://apache.claz.org/kafka/1.0.1/kafka_2.11-1.0.1.tgz
@@ -29,9 +22,6 @@ export PATH=$PATH:/usr/local/go/bin
 # install Golang package dependencies
 go get github.com/Shopify/sarama
 go get github.com/jasonlvhit/gocron
-
-# install java 1.8
-apt install openjdk1.8-jre
 
 # Done
 echo "All Done!" 
