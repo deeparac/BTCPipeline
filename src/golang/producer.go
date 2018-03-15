@@ -13,14 +13,9 @@ import (
 )
 
 var (
-    addr        = flag.String("address", "localhost:9092", "The address to bind to")
-    broker      = flag.String("brokers", "localhost:9092", "The Kafka brokers to connect to, as a comma separated list")
+    broker      = flag.String("broker", "192.168.99.103:9092", "The Kafka brokers to connect to")
     topic       = flag.String("topic", "btcpipe", "topic that's wrote into")
     verbose     = flag.Bool("verbose", false, "Turn on Sarama logging")
-    certFile    = flag.String("certificate", "", "The optional certificate file for client authentication")
-    keyFile     = flag.String("key", "", "The optional key file for client authentication")
-    caFile      = flag.String("ca", "", "The optional certificate authority file for TLS client authentication")
-    verifySsl   = flag.Bool("verify", false, "Optional verify ssl certificates chain")
     queryUrl    = flag.String("queryUrl", "https://api.coindesk.com/v1/bpi/currentprice.json", "the url that be queried for btc price")
 )
 
@@ -78,7 +73,7 @@ func main() {
     }()
 
     s := gocron.NewScheduler()
-    s.Every(2).Seconds().Do(queryPrice, *queryUrl, producer)
+    s.Every(30).Seconds().Do(queryPrice, *queryUrl, producer)
     <- s.Start()
 }
 
@@ -118,7 +113,7 @@ func queryPrice(url string, producer sarama.SyncProducer) error {
         fmt.Println("SendMessage fail")
         panic(sendErr)
     }
-
-    fmt.Println("Successfully sent BTC price (%s) at time (%s) in topic (%s)", price, timestamp, topic)
+    fmt.Println("s flag")
+    fmt.Sprintf("Successfully sent BTC price (%s) at time (%s) in topic (%s)", price, timestamp, topic)
     return nil
 }
