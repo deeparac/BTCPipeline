@@ -28,6 +28,7 @@ export PATH=$PATH:/usr/local/go/bin
 
 # install Golang package dependencies
 go get github.com/Shopify/sarama
+go get github.com/jasonlvhit/gocron
 
 # install java 1.8
 apt install openjdk1.8-jre
