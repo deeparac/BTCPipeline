@@ -52,14 +52,17 @@ type BTC_Info struct {
     } `json: bpi`
 }
 
-func main() {
+var config = sarama.NewConfig()
+
+func init() {
     flag.Parse()
 
-    config := sarama.NewConfig()
     config.Producer.RequiredAcks = sarama.WaitForAll
     config.Producer.Retry.Max = 5
     config.Producer.Return.Successes = true
+}
 
+func Producer_process() {
     brokerslc := []string{*broker}
     producer, err := sarama.NewSyncProducer(brokerslc, config)
     if err != nil {
