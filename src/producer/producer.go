@@ -1,23 +1,24 @@
-package main
+package producer
 
 import (
     "github.com/Shopify/sarama"
     "github.com/jasonlvhit/gocron"
 
     "fmt"
-    "flag"
     "strings"
     "io/ioutil"
     "net/http"
     "encoding/json"
 )
 
+/*
 var (
     broker      = flag.String("broker", "192.168.99.103:9092", "The Kafka brokers to connect to")
     topic       = flag.String("topic", "btcpipe", "topic that's wrote into")
     verbose     = flag.Bool("verbose", false, "Turn on Sarama logging")
     queryUrl    = flag.String("queryUrl", "https://api.coindesk.com/v1/bpi/currentprice.json", "the url that be queried for btc price")
 )
+*/
 
 type BTC_Info struct {
     Time struct {
@@ -54,16 +55,14 @@ type BTC_Info struct {
 
 var config = sarama.NewConfig()
 
-func init() {
-    flag.Parse()
-
+func InitProducer() {
     config.Producer.RequiredAcks = sarama.WaitForAll
     config.Producer.Retry.Max = 5
     config.Producer.Return.Successes = true
 }
 
-func Producer_process() {
-    brokerslc := []string{*broker}
+func ProducerProcess(broker string, topic string, queryUrl string, freqInSecond uint64) {
+    brokerslc := []string{broker}
     producer, err := sarama.NewSyncProducer(brokerslc, config)
     if err != nil {
         panic(err)
@@ -76,11 +75,11 @@ func Producer_process() {
     }()
 
     s := gocron.NewScheduler()
-    s.Every(30).Seconds().Do(queryPrice, *queryUrl, producer)
-    <- s.Start()
+    s.Every(freqInSecond).Seconds().Do(queryPrice, queryUrl, topic, producer)
+    <-s.Start()
 }
 
-func queryPrice(url string, producer sarama.SyncProducer) error {
+func queryPrice(url string, topic string, producer sarama.SyncProducer) error {
     r, err := http.Get(url)
     if err != nil {
         fmt.Println("Get fail")
@@ -107,7 +106,7 @@ func queryPrice(url string, producer sarama.SyncProducer) error {
     // produce to kafka
     msg_val := price + "@" + strings.Join(timestamp[:], "")
     msg := &sarama.ProducerMessage {
-        Topic: *topic,
+        Topic: topic,
         Value: sarama.StringEncoder(msg_val),
     }
 

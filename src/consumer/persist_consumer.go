@@ -1,4 +1,4 @@
-package main
+package consumer
 
 import (
     "gopkg.in/mgo.v2"
@@ -8,13 +8,13 @@ import (
     "os/signal"
     "syscall"
     "fmt"
-    "flag"
     "strings"
 
     "github.com/Shopify/sarama"
     _ "github.com/jasonlvhit/gocron"
 )
 
+/*
 var (
     broker         = flag.String("broker", "192.168.99.103:9092", "Kafka brokers to connect to")
     topic          = flag.String("topic", "btcpipe", "topic that's read from")
@@ -24,6 +24,7 @@ var (
     dbName         = flag.String("db", "btcbd", "MongoDB Database Name")
     collectionName = flag.String("collection", "btc_price", "MongoDB Collection Name")
 )
+*/
 
 type BTC struct {
     Timestamp string
@@ -33,12 +34,10 @@ type BTC struct {
 var session *mgo.Session
 var config = sarama.NewConfig()
 
-func init() {
-    flag.Parse()
-
+func InitConsumer(mongo_host string) {
     config.Consumer.Return.Errors = true
 
-    session, err:= mgo.Dial(*mongo_host)
+    session, err:= mgo.Dial(mongo_host)
     if err != nil {
         fmt.Println("Failed to connect to MongoDB")
         panic(err)
@@ -59,8 +58,8 @@ func mongoClose() {
     }()
 }
 
-func Persist_process() {
-   brokerslc := []string{*broker}
+func PersistProcess(broker string, topic string, db string, collection string) {
+   brokerslc := []string{broker}
 
    master, err := sarama.NewConsumer(brokerslc, config)
    if err != nil {
@@ -73,7 +72,7 @@ func Persist_process() {
         }
     }()
 
-    consumer, err := master.ConsumePartition(*topic, 0, sarama.OffsetOldest)
+    consumer, err := master.ConsumePartition(topic, 0, sarama.OffsetOldest)
     if err != nil {
         fmt.Println("ConsumerPartition fail")
         panic(err)
@@ -93,7 +92,7 @@ func Persist_process() {
                 case msg := <-consumer.Messages():
                     msgCount++
                     fmt.Println("Received messages", string(msg.Key), string(msg.Value))
-                    persist_data(msg, session)
+                    persist_data(msg, session, db, collection)
                 case <-signals:
                     fmt.Println("Interrupt!")
                     doneCh <- struct{}{}
@@ -105,8 +104,8 @@ func Persist_process() {
     fmt.Println("Done processing", msgCount, "messages")
 }
 
-func persist_data(msg *sarama.ConsumerMessage, session *mgo.Session) {
-    c := session.DB(*dbName).C(*collectionName)
+func persist_data(msg *sarama.ConsumerMessage, session *mgo.Session, db string, collection string) {
+    c := session.DB(db).C(collection)
 
     parsed := strings.Split(string(msg.Value), "@")
     statement := BTC{parsed[0], parsed[1]}
